@@ -140,18 +140,44 @@ def extract_receipt():
             tmp_image_path = tmp_file.name
         
         try:
-            # Prepare prompt - simpler format for better compatibility
-            prompt = config.USER_PROMPT
+            # Verify image was saved
+            logger.info(f"Temp image saved: {tmp_image_path}, exists: {os.path.exists(tmp_image_path)}, size: {os.path.getsize(tmp_image_path)} bytes")
             
-            # Generate response
+            # Prepare messages in the format Qwen2-VL expects
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": tmp_image_path},
+                        {"type": "text", "text": config.USER_PROMPT}
+                    ]
+                }
+            ]
+            
             logger.info(f"Generating response from model with max_tokens={config.MAX_TOKENS}...")
+            logger.info(f"Image path: {tmp_image_path}")
+            
+            # Apply chat template to format the prompt correctly
+            # Get model config
+            model_config = model_obj.config if hasattr(model_obj, 'config') else {}
+            
+            prompt = mlx_vlm.apply_chat_template(
+                processor_obj,
+                model_config,
+                messages,
+                num_images=1
+            )
+            
+            logger.info(f"Formatted prompt type: {type(prompt)}")
+            
             result = mlx_vlm.generate(
                 model_obj,
                 processor_obj,
                 prompt,
                 image=tmp_image_path,
                 max_tokens=config.MAX_TOKENS,
-                temperature=config.TEMPERATURE
+                temperature=config.TEMPERATURE,
+                verbose=True
             )
             
             # Extract text from GenerationResult

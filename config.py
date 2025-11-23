@@ -52,16 +52,22 @@ Rules:
 - If you cannot determine a value, use null
 - Return ONLY the JSON object, no markdown formatting or additional text"""
 
-USER_PROMPT = """Extract all information from this receipt image and return as JSON with these fields:
-- vendor_name
-- invoice_number
-- invoice_date (YYYY-MM-DD)
-- due_date (YYYY-MM-DD)
-- items (array with description, quantity, unit_price, total, category)
-- subtotal
-- tax_rate_percent
-- tax_amount
-- discount
-- total_due
+USER_PROMPT = """IMPORTANT: Read the ACTUAL text from this receipt/invoice image. Do NOT make up or generate fake data.
 
-Return only valid JSON, no other text."""
+Extract the following information from what you SEE in the image:
+- vendor_name (company name at the top)
+- invoice_number (invoice ID/number)
+- invoice_date (date in YYYY-MM-DD format)
+- due_date (due date in YYYY-MM-DD format, or null if not present)
+- items (array of line items with: description, quantity, unit_price, total, category)
+- subtotal (subtotal amount)
+- tax_rate_percent (tax percentage, e.g., 18.0 for 18%)
+- tax_amount (tax amount in currency)
+- discount (discount amount, or 0 if none)
+- total_due (final total amount)
+
+Rules:
+- Only extract data that is VISIBLE in the image
+- Use null for any field not present in the image
+- Do NOT invent or hallucinate data
+- Return ONLY valid JSON, no markdown or extra text"""

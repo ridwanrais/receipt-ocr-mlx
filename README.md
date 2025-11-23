@@ -44,8 +44,7 @@ Extract receipt data from an image
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8000/extract \
-  -F "image=@receipt.jpg"
+curl -X POST http://localhost:8000/extract -F "image=@testdata/sample_receipt.png"         
 ```
 
 **Response:**
