@@ -48,6 +48,7 @@
         "quantity": 10,
         "unit_price": 10.5,
         "total": 105.0,
+        "currency": "USD",
         "category": "Food"
       },
       {
@@ -55,6 +56,7 @@
         "quantity": 5,
         "unit_price": 15.0,
         "total": 75.0,
+        "currency": "USD",
         "category": "Clothing"
       }
     ],

@@ -60,6 +60,7 @@ curl -X POST http://localhost:8000/extract -F "image=@testdata/sample_receipt.pn
       "details": ["Grande", "Whole Milk"],
       "quantity": 1.0,
       "unit_price": 4.95,
+      "currency": "USD",
       "total": 4.95,
       "category": "Food & Beverage"
     }

@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image
 import mlx_vlm
+import requests
 
 import config
 
@@ -93,39 +94,86 @@ def health_check():
 
 @app.route('/extract', methods=['POST'])
 def extract_receipt():
-    """Extract receipt data from uploaded image"""
+    """Extract receipt data from uploaded image or image URL"""
     try:
-        # Check if image file is present
-        if 'image' not in request.files:
-            return jsonify({"error": "No image file provided"}), 400
+        image = None
+        image_source = None
         
-        file = request.files['image']
+        # Check if image URL is provided (JSON request)
+        if request.is_json:
+            data = request.get_json()
+            image_url = data.get('image_url')
+            
+            if not image_url:
+                return jsonify({"error": "No image_url provided in JSON body"}), 400
+            
+            logger.info(f"Processing image from URL: {image_url}")
+            image_source = image_url
+            
+            # Download image from URL
+            try:
+                response = requests.get(image_url, timeout=10)
+                response.raise_for_status()
+                
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                if not content_type.startswith('image/'):
+                    return jsonify({"error": f"URL does not point to an image. Content-Type: {content_type}"}), 400
+                
+                # Check file size
+                file_size = len(response.content)
+                if file_size > config.MAX_IMAGE_SIZE:
+                    return jsonify({"error": f"Image too large. Max size: {config.MAX_IMAGE_SIZE} bytes"}), 400
+                
+                logger.info(f"Downloaded image ({file_size} bytes)")
+                
+                # Load image
+                image = Image.open(BytesIO(response.content))
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+                    
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Failed to download image from URL: {e}")
+                return jsonify({"error": f"Failed to download image: {str(e)}"}), 400
+            except Exception as e:
+                logger.error(f"Failed to load image from URL: {e}")
+                return jsonify({"error": "Invalid image from URL"}), 400
         
-        if file.filename == '':
-            return jsonify({"error": "No file selected"}), 400
+        # Check if image file is uploaded (multipart/form-data request)
+        elif 'image' in request.files:
+            file = request.files['image']
+            
+            if file.filename == '':
+                return jsonify({"error": "No file selected"}), 400
+            
+            if not allowed_file(file.filename):
+                return jsonify({"error": f"File type not allowed. Allowed types: {config.ALLOWED_EXTENSIONS}"}), 400
+            
+            # Check file size
+            file.seek(0, os.SEEK_END)
+            file_size = file.tell()
+            file.seek(0)
+            
+            if file_size > config.MAX_IMAGE_SIZE:
+                return jsonify({"error": f"File too large. Max size: {config.MAX_IMAGE_SIZE} bytes"}), 400
+            
+            logger.info(f"Processing uploaded image: {file.filename} ({file_size} bytes)")
+            image_source = file.filename
+            
+            # Load image
+            try:
+                image = Image.open(BytesIO(file.read()))
+                # Convert to RGB if necessary
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+            except Exception as e:
+                logger.error(f"Failed to load image: {e}")
+                return jsonify({"error": "Invalid image file"}), 400
         
-        if not allowed_file(file.filename):
-            return jsonify({"error": f"File type not allowed. Allowed types: {config.ALLOWED_EXTENSIONS}"}), 400
+        else:
+            return jsonify({"error": "No image file or image_url provided"}), 400
         
-        # Check file size
-        file.seek(0, os.SEEK_END)
-        file_size = file.tell()
-        file.seek(0)
-        
-        if file_size > config.MAX_IMAGE_SIZE:
-            return jsonify({"error": f"File too large. Max size: {config.MAX_IMAGE_SIZE} bytes"}), 400
-        
-        logger.info(f"Processing image: {file.filename} ({file_size} bytes)")
-        
-        # Load image
-        try:
-            image = Image.open(BytesIO(file.read()))
-            # Convert to RGB if necessary
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
-        except Exception as e:
-            logger.error(f"Failed to load image: {e}")
-            return jsonify({"error": "Invalid image file"}), 400
+        # At this point, we have a valid PIL Image object
         
         # Load model (lazy loading)
         try:
