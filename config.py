@@ -18,6 +18,10 @@ TEMPERATURE = float(os.getenv("TEMPERATURE", 0.7))
 MAX_IMAGE_SIZE = int(os.getenv("MAX_IMAGE_SIZE", 10 * 1024 * 1024))  # 10MB
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
+# Image Resizing (to prevent memory issues with large images)
+# Max dimension (width or height) for resizing - lower = faster but less detail
+MAX_IMAGE_DIMENSION = int(os.getenv("MAX_IMAGE_DIMENSION", 1024))  # Default 1024px
+
 # System Prompt for Receipt Extraction
 # SYSTEM_PROMPT = """You are an expert receipt and invoice data extraction assistant. 
 # Extract the following information from the receipt image and return ONLY a valid JSON object with no additional text:

@@ -51,6 +51,41 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in config.ALLOWED_EXTENSIONS
 
 
+def resize_image_if_needed(image, max_dimension=None):
+    """Resize image if it exceeds max dimension to prevent memory issues.
+    
+    Args:
+        image: PIL Image object
+        max_dimension: Maximum width or height allowed (uses config.MAX_IMAGE_DIMENSION if None)
+    
+    Returns:
+        Resized PIL Image if needed, otherwise original image
+    """
+    if max_dimension is None:
+        max_dimension = config.MAX_IMAGE_DIMENSION
+    
+    width, height = image.size
+    
+    # Check if resizing is needed
+    if width <= max_dimension and height <= max_dimension:
+        logger.info(f"Image size {width}x{height} is within limits ({max_dimension}px max), no resize needed")
+        return image
+    
+    # Calculate new dimensions maintaining aspect ratio
+    if width > height:
+        new_width = max_dimension
+        new_height = int(height * (max_dimension / width))
+    else:
+        new_height = max_dimension
+        new_width = int(width * (max_dimension / height))
+    
+    logger.info(f"Resizing image from {width}x{height} to {new_width}x{new_height} (max: {max_dimension}px)")
+    
+    # Use LANCZOS for high-quality downsampling
+    resized = image.resize((new_width, new_height), Image.LANCZOS)
+    return resized
+
+
 def extract_json_from_response(text):
     """Extract JSON from model response, handling markdown code blocks"""
     text = text.strip()
@@ -131,6 +166,9 @@ def extract_receipt():
                 image = Image.open(BytesIO(response.content))
                 if image.mode != 'RGB':
                     image = image.convert('RGB')
+                
+                # Resize if too large to prevent memory issues
+                image = resize_image_if_needed(image)
                     
             except requests.exceptions.RequestException as e:
                 logger.error(f"Failed to download image from URL: {e}")
@@ -166,6 +204,9 @@ def extract_receipt():
                 # Convert to RGB if necessary
                 if image.mode != 'RGB':
                     image = image.convert('RGB')
+                
+                # Resize if too large to prevent memory issues
+                image = resize_image_if_needed(image)
             except Exception as e:
                 logger.error(f"Failed to load image: {e}")
                 return jsonify({"error": "Invalid image file"}), 400
