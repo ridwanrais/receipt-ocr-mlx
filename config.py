@@ -60,12 +60,21 @@ CURRENCY RULE:
 - Ignore the absence of "Rp" or "IDR" in the image.
 - Do NOT guess other currencies. Always output "IDR".
 
+DATE FORMAT RULE (CRITICAL):
+- ALL dates MUST be converted to YYYY-MM-DD format (e.g., "2015-12-05")
+- If the receipt shows "05 Desember 2015", convert it to "2015-12-05"
+- If the receipt shows "5/12/2015" or "05/12/2015", convert it to "2015-12-05"
+- If the receipt shows "Dec 5, 2015", convert it to "2015-12-05"
+- NEVER output dates in any other format. ALWAYS use YYYY-MM-DD.
+- Month names in any language (January, Januari, Desember, etc.) must be converted to numbers.
+
 Extract the following information from what you SEE in the image:
 - vendor_name (company name at the top)
-- invoice_number (invoice ID/number)
-- invoice_date (date in YYYY-MM-DD format)
-- due_date (due date in YYYY-MM-DD format, or null if not present)
+- invoice_number (invoice ID/number. If not present, use null)
+- invoice_date (MUST be in YYYY-MM-DD format, e.g., "2015-12-05")
+- due_date (MUST be in YYYY-MM-DD format, or null if not present)
 - items (array of line items with: description, quantity, unit_price, total, currency, category)
+  - category MUST be one of: FOOD, GROCERIES, TRANSPORT, SHOPPING, ENTERTAINMENT, UTILITIES, SUBSCRIPTIONS, HEALTHCARE, OTHER
 - subtotal (subtotal amount)
 - tax_rate_percent (tax percentage, e.g., 18.0 for 18%. If there is NO tax indication on the receipt, set tax_rate_percent to 0)
 - tax_amount (tax amount in currency. If there is NO tax indication on the receipt, set tax_amount to 0)
@@ -74,6 +83,7 @@ Extract the following information from what you SEE in the image:
 
 Rules:
 - Only extract data that is VISIBLE in the image
+- DATES MUST BE IN YYYY-MM-DD FORMAT - convert from any format you see on the receipt
 - If the receipt does NOT explicitly show tax, VAT, PPN, service charge, or similar, ALWAYS output tax_rate_percent = 0 and tax_amount = 0
 - Use null for any field not present in the image (except tax and discount rules above)
 - Do NOT invent or hallucinate data
