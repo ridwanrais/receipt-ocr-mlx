@@ -73,13 +73,21 @@ Extract the following information from what you SEE in the image:
 - invoice_number (invoice ID/number. If not present, use null)
 - invoice_date (MUST be in YYYY-MM-DD format, e.g., "2015-12-05")
 - due_date (MUST be in YYYY-MM-DD format, or null if not present)
-- items (array of line items with: description, quantity, unit_price, total, currency, category)
-  - category MUST be one of: FOOD, GROCERIES, TRANSPORT, SHOPPING, ENTERTAINMENT, UTILITIES, SUBSCRIPTIONS, HEALTHCARE, OTHER
+- items (array of objects, EACH item MUST have ALL these fields):
+  - description (string)
+  - quantity (number)
+  - unit_price (number)
+  - total (number)
+  - currency (string, ALWAYS "IDR")
+  - category (string, MUST be one of: FOOD, GROCERIES, TRANSPORT, SHOPPING, ENTERTAINMENT, UTILITIES, SUBSCRIPTIONS, HEALTHCARE, OTHER)
 - subtotal (subtotal amount)
 - tax_rate_percent (tax percentage, e.g., 18.0 for 18%. If there is NO tax indication on the receipt, set tax_rate_percent to 0)
 - tax_amount (tax amount in currency. If there is NO tax indication on the receipt, set tax_amount to 0)
 - discount (discount amount, or 0 if none)
 - total_due (final total amount)
+
+EXAMPLE item format (EVERY item must follow this exact structure):
+{"description": "Coffee", "quantity": 2, "unit_price": 15000, "total": 30000, "currency": "IDR", "category": "FOOD"}
 
 Rules:
 - Only extract data that is VISIBLE in the image
